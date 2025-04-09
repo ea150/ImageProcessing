@@ -7,4 +7,32 @@
     android:layout_height="match_parent"
     tools:context=".MainActivityNoiseMasking">
 
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Noise Masking Page"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="163dp" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="372dp"
+        android:layout_height="147dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:text="This is going to be our second of three activities. This activity will be where users can experiment with Noise Masking in Image Processing. Noise Masking is when a camera takes lots of dark pictures to figure out what the average random noise per picture is, and it subtracts that from the original dark image to get a better picture, since the darker a picture is, the more random noise there will naturally be. There will be a button in the top left that can bring you back to the launch page. The underlying code will use light sensors and the camera to determine how much random noise to subtract. "
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="247dp" />
+
+    <Button
+        android:id="@+id/BackButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Back"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="517dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>
