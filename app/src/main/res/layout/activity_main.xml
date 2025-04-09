@@ -10,10 +10,29 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
+        android:text="This is the Launch Page"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/NoiseMasking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Noise Masking"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="421dp" />
+
+    <Button
+        android:id="@+id/HDR"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="High Dynamic Range"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="487dp" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
