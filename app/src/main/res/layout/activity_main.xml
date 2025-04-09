@@ -9,8 +9,8 @@
 
     <TextView
         android:id="@+id/textView3"
-        android:layout_width="315dp"
-        android:layout_height="222dp"
+        android:layout_width="318dp"
+        android:layout_height="320dp"
         android:text="@string/launch_desc"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
