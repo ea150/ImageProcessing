@@ -65,6 +65,20 @@
         app:layout_constraintDimensionRatio="1:1" />
 
     <TextView
+        android:id="@+id/hdrInfoText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/hdr_info"
+        android:textColor="@color/black"
+        android:textSize="16sp"
+        android:gravity="center"
+        app:layout_constraintTop_toTopOf="@id/previewImage"
+        app:layout_constraintBottom_toBottomOf="@id/previewImage"
+        app:layout_constraintStart_toStartOf="@id/previewImage"
+        app:layout_constraintEnd_toEndOf="@id/previewImage"
+        app:layout_constraintVertical_bias="0.4" />
+
+    <TextView
         android:id="@+id/previewLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -72,6 +86,7 @@
         android:textSize="16sp"
         android:textColor="#666666"
         android:textStyle="italic"
+        android:visibility="invisible"
         app:layout_constraintTop_toTopOf="@id/previewImage"
         app:layout_constraintBottom_toBottomOf="@id/previewImage"
         app:layout_constraintStart_toStartOf="@id/previewImage"
@@ -129,7 +144,7 @@
         android:backgroundTint="@color/primaryColor"
         android:elevation="4dp"
         android:fontFamily="sans-serif-medium"
-        android:text="@string/apply_hdr"
+        android:text="@string/hdr_show_images_button"
         android:textAllCaps="false"
         android:textColor="@color/buttonText"
         android:textSize="16sp"

@@ -1,12 +1,14 @@
 <resources>
     <string name="app_name">ImageProcessing</string>
-    <string name="apply_hdr">Apply HDR</string>
+    <string name="hdr_info_button">HDR Info</string>
+    <string name="hdr_show_images_button">Display Images</string>
     <string name="back">Back</string>
     <string name="byline">Created by Emily Anderson and Nick Salvemini</string>
     <string name="hdr_imaging">HDR Imaging</string>
     <string name="hdr_take_picture">Take a picture first in order to process.</string>
     <string name="hdr_apply_or_take">Apply HDR or take a new photo.</string>
     <string name="hdr">High Dynamic Range</string>
+    <string name="hdr_info">High Dynamic Range imaging takes ~three copies of a photo, each at a different exposure or light level, and it superimposes them on top of each other to reduce the contrast and make the image look more natural.</string>
     <string name="image_placeholder">No image selected yet</string>
     <string name="image_preview">Image preview area</string>
     <string name="noise_masking">Noise Masking</string>
