@@ -2,17 +2,25 @@ package com.example.imageprocessing;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivityHighDynamicRange extends AppCompatActivity {
 
-    Button backButton;
+    Button backButton, photoButton, hdrButton;
+    ImageView previewImage;
+    TextView hdrInfo, previewLabel, tagline;
+
+    boolean image;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +32,38 @@ public class MainActivityHighDynamicRange extends AppCompatActivity {
         backButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivityHighDynamicRange.this, MainActivity.class);
             startActivity(intent);
+        });
+
+        previewImage = findViewById(R.id.previewImage);
+        hdrInfo = findViewById(R.id.hdrInfoText);
+        previewLabel = findViewById(R.id.previewLabel);
+        tagline = findViewById(R.id.tagline);
+
+        image = false;
+
+        photoButton = findViewById(R.id.photoButton);
+        photoButton.setOnClickListener(v -> {
+            // TODO This is where we will use the camera class to take picture
+            //  we will also need to modify the imageview if we are going to display side by side images.
+            previewImage.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.mountain, getTheme()));
+            previewImage.setVisibility(View.VISIBLE);
+            previewLabel.setVisibility(View.INVISIBLE);
+            tagline.setText(R.string.hdr_apply_or_take);
+        });
+
+        hdrButton = findViewById(R.id.hdrButton);
+        hdrButton.setOnClickListener(v -> {
+            if (!image) {
+                hdrButton.setText(R.string.hdr_info_button);
+                hdrInfo.setVisibility(View.INVISIBLE);
+                previewImage.setVisibility(View.VISIBLE);
+                image = true;
+            } else {
+                hdrButton.setText(R.string.hdr_show_images_button);
+                hdrInfo.setVisibility(View.VISIBLE);
+                previewImage.setVisibility(View.INVISIBLE);
+                image = false;
+            }
         });
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
