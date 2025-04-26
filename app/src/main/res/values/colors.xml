@@ -5,4 +5,5 @@
     <color name="primaryColor">#1A929E</color>
     <color name="primaryLight">#E0E7FF</color>
     <color name="buttonText">#FFFFFF</color>
+    <color name="blue">#273DE9</color>
 </resources>
