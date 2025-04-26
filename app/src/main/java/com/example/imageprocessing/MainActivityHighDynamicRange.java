@@ -48,7 +48,7 @@ public class MainActivityHighDynamicRange extends AppCompatActivity {
             previewImage.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.mountain, getTheme()));
             previewImage.setVisibility(View.VISIBLE);
             previewLabel.setVisibility(View.INVISIBLE);
-            tagline.setText(R.string.hdr_apply_or_take);
+            tagline.setVisibility(View.INVISIBLE);
         });
 
         hdrButton = findViewById(R.id.hdrButton);
@@ -59,7 +59,7 @@ public class MainActivityHighDynamicRange extends AppCompatActivity {
                 previewImage.setVisibility(View.VISIBLE);
                 image = true;
             } else {
-                hdrButton.setText(R.string.hdr_show_images_button);
+                hdrButton.setText(R.string.show_images_button);
                 hdrInfo.setVisibility(View.VISIBLE);
                 previewImage.setVisibility(View.INVISIBLE);
                 image = false;

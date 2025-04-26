@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    android:background="@drawable/hdr_gradient"
+    android:background="@drawable/gradient"
     tools:context=".MainActivityHighDynamicRange">
 
     <!-- Title -->
@@ -36,7 +36,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif"
-        android:text="@string/hdr_take_picture"
+        android:text="@string/take_picture"
         android:textAlignment="center"
         android:textColor="@color/black"
         android:textSize="20sp"
@@ -144,7 +144,7 @@
         android:backgroundTint="@color/primaryColor"
         android:elevation="4dp"
         android:fontFamily="sans-serif-medium"
-        android:text="@string/hdr_show_images_button"
+        android:text="@string/show_images_button"
         android:textAllCaps="false"
         android:textColor="@color/buttonText"
         android:textSize="16sp"
