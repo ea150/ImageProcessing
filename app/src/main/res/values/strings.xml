@@ -1,12 +1,12 @@
 <resources>
     <string name="app_name">ImageProcessing</string>
     <string name="hdr_info_button">HDR Info</string>
-    <string name="hdr_show_images_button">Display Images</string>
+    <string name="nm_info_button">Noise Masking Info</string>
+    <string name="show_images_button">Display Images</string>
     <string name="back">Back</string>
     <string name="byline">Created by Emily Anderson and Nick Salvemini</string>
     <string name="hdr_imaging">HDR Imaging</string>
-    <string name="hdr_take_picture">Take a picture first in order to process.</string>
-    <string name="hdr_apply_or_take">Apply HDR or take a new photo.</string>
+    <string name="take_picture">Take a picture first in order to process.</string>
     <string name="hdr">High Dynamic Range</string>
     <string name="hdr_info">High Dynamic Range imaging takes ~three copies of a photo, each at a different exposure or light level, and it superimposes them on top of each other to reduce the contrast and make the image look more natural.</string>
     <string name="image_placeholder">No image selected yet</string>
@@ -16,6 +16,5 @@
     <string name="launch_title">Image Processing Wizard</string>
     <string name="take_image">Take Photo</string>
     <string name="mountain">Mountain</string>
-    <string name="noise_masking_desc">This is going to be our second of three activities. This activity will be where users can experiment with Noise Masking in Image Processing. Noise Masking is when a camera takes lots of dark pictures to figure out what the average random noise per picture is, and it subtracts that from the original dark image to get a better picture, since the darker a picture is, the more random noise there will naturally be. There will be a button in the top left that can bring you back to the launch page. The underlying code will use light sensors and the camera to determine how much random noise to subtract.</string>
-    <string name="noise_masking_page">Noise Masking Page</string>
+    <string name="nm_info">Noise Masking is when a camera takes lots of dark pictures to figure out what the average random noise per picture is, and it subtracts that from the original dark image to get a better picture since the darker a picture is, the more random noise there will naturally be. It helps eliminate all this random noise.</string>
 </resources>
