@@ -16,7 +16,7 @@
 
 Using the hammer icon (shown below) on at the top of the console, build the project.
 
-![Hammer icon](img_1.png)
+![Hammer icon](/img_1.png)
 
 ### Step 3:  Clean Project and Rebuild
 
@@ -40,5 +40,5 @@ File -> Invalidate Caches
 
 In the pop up menu, select Invalidate and Restart:
 
-![Invalidate and Restart pop-up menu](img_2.png)
+![Invalidate and Restart pop-up menu](/img_2.png)
 *Note: Do not check any of the optional boxes*
