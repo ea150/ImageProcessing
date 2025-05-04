@@ -1,0 +1,50 @@
+{
+  "installationFolder": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\build\\intermediates\\prefab_package\\debug\\prefab",
+  "gradlePath": ":OpenCV",
+  "packageInfo": {
+    "packageName": "OpenCV",
+    "packageSchemaVersion": 2,
+    "packageDependencies": [],
+    "modules": [
+      {
+        "moduleName": "opencv_jni_shared",
+        "moduleHeaders": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\native\\jni\\include",
+        "moduleExportLibraries": [],
+        "abis": [
+          {
+            "abiName": "armeabi-v7a",
+            "abiApi": 21,
+            "abiNdkMajor": 27,
+            "abiStl": "c++_shared",
+            "abiLibrary": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\armeabi-v7a\\libopencv_jni_shared.a",
+            "abiAndroidGradleBuildJsonFile": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\armeabi-v7a\\android_gradle_build.json"
+          },
+          {
+            "abiName": "arm64-v8a",
+            "abiApi": 21,
+            "abiNdkMajor": 27,
+            "abiStl": "c++_shared",
+            "abiLibrary": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\arm64-v8a\\libopencv_jni_shared.a",
+            "abiAndroidGradleBuildJsonFile": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\arm64-v8a\\android_gradle_build.json"
+          },
+          {
+            "abiName": "x86",
+            "abiApi": 21,
+            "abiNdkMajor": 27,
+            "abiStl": "c++_shared",
+            "abiLibrary": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\x86\\libopencv_jni_shared.a",
+            "abiAndroidGradleBuildJsonFile": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\x86\\android_gradle_build.json"
+          },
+          {
+            "abiName": "x86_64",
+            "abiApi": 21,
+            "abiNdkMajor": 27,
+            "abiStl": "c++_shared",
+            "abiLibrary": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\x86_64\\libopencv_jni_shared.a",
+            "abiAndroidGradleBuildJsonFile": "C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\Debug\\2h3u485c\\x86_64\\android_gradle_build.json"
+          }
+        ]
+      }
+    ]
+  }
+}
