@@ -1,0 +1,19 @@
+@echo off
+"C:\\Users\\emily\\AppData\\Local\\Android\\ssdk\\cmake\\3.22.1\\bin\\cmake.exe" ^
+  "-HC:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\libcxx_helper" ^
+  "-DCMAKE_SYSTEM_NAME=Android" ^
+  "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" ^
+  "-DCMAKE_SYSTEM_VERSION=21" ^
+  "-DANDROID_PLATFORM=android-21" ^
+  "-DANDROID_ABI=x86" ^
+  "-DCMAKE_ANDROID_ARCH_ABI=x86" ^
+  "-DANDROID_NDK=C:\\Users\\emily\\AppData\\Local\\Android\\ssdk\\ndk\\27.0.12077973" ^
+  "-DCMAKE_ANDROID_NDK=C:\\Users\\emily\\AppData\\Local\\Android\\ssdk\\ndk\\27.0.12077973" ^
+  "-DCMAKE_TOOLCHAIN_FILE=C:\\Users\\emily\\AppData\\Local\\Android\\ssdk\\ndk\\27.0.12077973\\build\\cmake\\android.toolchain.cmake" ^
+  "-DCMAKE_MAKE_PROGRAM=C:\\Users\\emily\\AppData\\Local\\Android\\ssdk\\cmake\\3.22.1\\bin\\ninja.exe" ^
+  "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\build\\intermediates\\cxx\\RelWithDebInfo\\461b622z\\obj\\x86" ^
+  "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=C:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\build\\intermediates\\cxx\\RelWithDebInfo\\461b622z\\obj\\x86" ^
+  "-DCMAKE_BUILD_TYPE=RelWithDebInfo" ^
+  "-BC:\\Users\\emily\\AndroidStudioProjects\\ImageProcessing\\OpenCV\\.cxx\\RelWithDebInfo\\461b622z\\x86" ^
+  -GNinja ^
+  "-DANDROID_STL=c++_shared"
