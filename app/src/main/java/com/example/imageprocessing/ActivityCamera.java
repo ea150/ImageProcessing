@@ -22,7 +22,9 @@ import androidx.core.app.ActivityCompat;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class ActivityCamera extends AppCompatActivity {
 
@@ -148,50 +150,65 @@ public class ActivityCamera extends AppCompatActivity {
             Size rawSize = rawSizes[0];
 
             //TODO: buffer will need to be extracted to a variable and passed in (3 or 10 respectively)
-            imageReader = ImageReader.newInstance(rawSize.getWidth(), rawSize.getHeight(), ImageFormat.RAW_SENSOR, 2);
+            int burstSize = 10; //TODO: for dev only
+            imageReader = ImageReader.newInstance(rawSize.getWidth(), rawSize.getHeight(), ImageFormat.RAW_SENSOR, burstSize);
             Surface rawSurface = imageReader.getSurface();
 
             imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+                int savedCount = 0;
+
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    try (Image image = reader.acquireLatestImage()) {
-                        File dngFile = new File(getCacheDir(), "raw_" + System.currentTimeMillis() + ".dng");
+                    try (Image image = reader.acquireNextImage()) {
+                        if (image == null) return;
+
+                        File dngFile = new File(getCacheDir(), "raw_burst_" + System.currentTimeMillis() + "_" + savedCount + ".dng");
 
                         DngCreator dngCreator = new DngCreator(cameraCharacteristics, captureResult);
                         try (FileOutputStream output = new FileOutputStream(dngFile)) {
                             dngCreator.writeImage(output, image);
-                            //TODO: MODIFY to reflect the numer of images taken
-                            Toast.makeText(ActivityCamera.this, "RAW photo saved!", Toast.LENGTH_SHORT).show();
+                            savedCount++;
+                            if (savedCount >= burstSize) {
+                                Toast.makeText(ActivityCamera.this, "RAW burst complete", Toast.LENGTH_SHORT).show();
+                            }
                         }
-
                     } catch (Exception e) {
-                        Toast.makeText(ActivityCamera.this, "RAW capture failed.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ActivityCamera.this, "Error saving burst image", Toast.LENGTH_SHORT).show();
                     }
                 }
             }, null);
 
-            final CaptureRequest.Builder rawBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-            rawBuilder.addTarget(rawSurface);
+            List<CaptureRequest> burstList = new ArrayList<>();
+            for (int i = 0; i < burstSize; i++) {
+                CaptureRequest.Builder rawBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+                rawBuilder.addTarget(rawSurface);
+                burstList.add(rawBuilder.build());
+            }
 
             camera.createCaptureSession(Arrays.asList(rawSurface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     try {
-                        session.capture(rawBuilder.build(), new CameraCaptureSession.CaptureCallback() {
+                        session.captureBurst(burstList, new CameraCaptureSession.CaptureCallback() {
                             @Override
                             public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                                            @NonNull CaptureRequest request,
                                                            @NonNull TotalCaptureResult result) {
                                 captureResult = result;
                             }
+
+                            @Override
+                            public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session,int sequenceId, long frameNumber) {
+                                Toast.makeText(ActivityCamera.this, "All burst captures done", Toast.LENGTH_SHORT).show();
+                            }
                         }, null);
                     } catch (CameraAccessException e) {
-                        Toast.makeText(ActivityCamera.this, "Capture failed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ActivityCamera.this, "Burst capture failed", Toast.LENGTH_SHORT).show();
                     }
                 }
 
                 @Override public void onConfigureFailed(@NonNull CameraCaptureSession session) {
-                    Toast.makeText(ActivityCamera.this, "Session failed", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(ActivityCamera.this, "Session config failed", Toast.LENGTH_SHORT).show();
                 }
             }, null);
 
