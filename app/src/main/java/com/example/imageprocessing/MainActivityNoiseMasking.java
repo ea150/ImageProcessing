@@ -1,6 +1,8 @@
 package com.example.imageprocessing;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -9,10 +11,11 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+
+import java.io.File;
 
 public class MainActivityNoiseMasking extends AppCompatActivity {
 
@@ -20,7 +23,7 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
     ImageView previewImage;
     TextView nmInfo, previewLabel, tagline;
 
-    boolean image;
+    boolean processedImageExists;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,31 +41,47 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
         nmInfo = findViewById(R.id.nmInfoText);
         previewLabel = findViewById(R.id.previewLabel);
         tagline = findViewById(R.id.tagline);
-
-        image = false;
-
+        nmButton = findViewById(R.id.nmButton);
         photoButton = findViewById(R.id.photoButton);
-        photoButton.setOnClickListener(v -> {
-            // TODO This is where we will use the camera class to take picture
-            //  we will also need to modify the imageview if we are going to display side by side images.
-            previewImage.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.mountain, getTheme()));
+
+        File processedImg = null;
+        File[] imgs = getCacheDir().listFiles();
+        if (imgs != null && imgs.length > 0) {
+            processedImg = imgs[imgs.length - 1];
+            processedImageExists = processedImg.getName().endsWith(".jpg");
+        } else {
+            processedImageExists = false;
+        }
+
+        if (processedImageExists) {
+            nmButton.setText(R.string.nm_info_button);
+            nmInfo.setVisibility(View.INVISIBLE);
+            Bitmap bitmap = BitmapFactory.decodeFile(processedImg.getAbsolutePath());
+            previewImage.setImageBitmap(bitmap);
             previewImage.setVisibility(View.VISIBLE);
-            previewLabel.setVisibility(View.INVISIBLE);
-            tagline.setVisibility(View.INVISIBLE);
+        } else {
+            nmButton.setText(R.string.show_images_button);
+            nmInfo.setVisibility(View.VISIBLE);
+            previewImage.setVisibility(View.INVISIBLE);
+        }
+
+        photoButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivityNoiseMasking.this, ActivityCamera.class);
+            intent.putExtra("setRequired", 10);
+            startActivity(intent);
         });
 
-        nmButton = findViewById(R.id.nmButton);
         nmButton.setOnClickListener(v -> {
-            if (!image) {
+            if (!processedImageExists) {
                 nmButton.setText(R.string.nm_info_button);
                 nmInfo.setVisibility(View.INVISIBLE);
                 previewImage.setVisibility(View.VISIBLE);
-                image = true;
+                processedImageExists = true;
             } else {
                 nmButton.setText(R.string.show_images_button);
                 nmInfo.setVisibility(View.VISIBLE);
                 previewImage.setVisibility(View.INVISIBLE);
-                image = false;
+                processedImageExists = false;
             }
         });
 
