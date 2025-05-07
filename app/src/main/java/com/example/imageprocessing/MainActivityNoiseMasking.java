@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -43,6 +45,12 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
         tagline = findViewById(R.id.tagline);
         nmButton = findViewById(R.id.nmButton);
         photoButton = findViewById(R.id.photoButton);
+
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) previewImage.getLayoutParams();
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        float deviceRatio = (float) metrics.heightPixels / metrics.widthPixels;
+        params.dimensionRatio = "W," + (1/deviceRatio) + ":1";
+        previewImage.setLayoutParams(params);
 
         File processedImg = null;
         File[] imgs = getCacheDir().listFiles();
