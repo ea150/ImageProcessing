@@ -3,6 +3,7 @@ package com.example.imageprocessing;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageDecoder;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -50,15 +51,24 @@ public class ImageProcessor extends AppCompatActivity {
         });
     }
 
-    private Bitmap ImageProcessFactory(File[] rawData, int setRequired, String processID){
+    private Bitmap ImageProcessFactory( int setRequired, String processID) throws IOException {
+
+        File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
+        Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
+        File[] rawData = Arrays.copyOfRange(dngFiles, 0, setRequired);
+//            Toast.makeText(this, "Not enough DNG files", Toast.LENGTH_SHORT).show();
+
 
         //load in the DNG files as Bitmap
         Bitmap[] bitmaps = new Bitmap[setRequired];
-        for (int i = 0; i < setRequired; i++) {
-            //TODO: add API requirements....how to handle?
-            ImageDecoder.Source source = ImageDecoder.createSource(rawData[i]);
-            bitmaps[i] = ImageDecoder.decodeBitmap(source);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            for (int i = 0; i < setRequired; i++) {
+                ImageDecoder.Source source = null;
+                source = ImageDecoder.createSource(rawData[i]);
+                bitmaps[i] = ImageDecoder.decodeBitmap(source);
         }
+    }
 
         //setup size of output Bitmap
         int width = bitmaps[0].getWidth();
