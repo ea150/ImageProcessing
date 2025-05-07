@@ -9,7 +9,6 @@ import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -43,12 +42,9 @@ public class MainActivityHighDynamicRange extends AppCompatActivity {
 
         photoButton = findViewById(R.id.photoButton);
         photoButton.setOnClickListener(v -> {
-            // TODO This is where we will use the camera class to take picture
-            //  we will also need to modify the imageview if we are going to display side by side images.
-            previewImage.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.mountain, getTheme()));
-            previewImage.setVisibility(View.VISIBLE);
-            previewLabel.setVisibility(View.INVISIBLE);
-            tagline.setVisibility(View.INVISIBLE);
+            Intent intent = new Intent(MainActivityHighDynamicRange.this, ActivityCamera.class);
+            intent.putExtra("setRequired", 3);
+            startActivity(intent);
         });
 
         hdrButton = findViewById(R.id.hdrButton);
