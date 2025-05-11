@@ -36,7 +36,7 @@ public class ImageProcessor extends AppCompatActivity {
 
     private Bitmap processedImage;
 
-    private final List<Future<PixelUpdate>> futures = new ArrayList<>();
+    private final List<Future<PixelRowUpdate>> futures = new ArrayList<>();
 
 
     @Override
@@ -58,7 +58,7 @@ public class ImageProcessor extends AppCompatActivity {
                 throw new RuntimeException(e);
             }
 
-            for (Future<PixelUpdate> future : futures) {
+            for (Future<PixelRowUpdate> future : futures) {
                 try {
                     future.get();
                 } catch (Exception e) {
@@ -106,17 +106,18 @@ public class ImageProcessor extends AppCompatActivity {
 
         int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
         ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                int finalY = y;
-                int finalX = x;
-                Future<PixelUpdate> future = executorService.submit(() -> {
+
+        for (int y = 0; y < height; y++) {
+            int finalY = y;
+            Future<PixelRowUpdate> future = executorService.submit(() -> {
+                int[] pixelUpdates = new int[width];
+                for (int x = 0; x < width; x++) {
                     // Calculates average luminance of a given pixel
                     double[] luminances = new double[setRequired];
                     double[] lumVariances = new double[setRequired];
                     for (int i = 0; i < setRequired; i++) {
                         Bitmap bmp = bitmaps[i];
-                        int color = bmp.getPixel(finalX, finalY);
+                        int color = bmp.getPixel(x, finalY);
                         int r = Color.red(color);
                         int g = Color.green(color);
                         int b = Color.blue(color);
@@ -128,18 +129,21 @@ public class ImageProcessor extends AppCompatActivity {
                     }
                     double avgLuminanceSquare = Arrays.stream(lumVariances).sum() / setRequired;
                     int gray = Math.min(255, (int) (Math.sqrt(avgLuminanceSquare) * 2));
-                    return new PixelUpdate(finalX, finalY, Color.rgb(gray, gray, gray));
-                });
-                futures.add(future);
-            }
+                    pixelUpdates[x] = Color.rgb(gray, gray, gray);
+                }
+                return new PixelRowUpdate(finalY, pixelUpdates);
+            });
+            futures.add(future);
         }
 
         executorService.submit(() -> {
             // Wait for all tasks to finish and apply updates
-            for (Future<PixelUpdate> future : futures) {
+            for (Future<PixelRowUpdate> future : futures) {
                 try {
-                    PixelUpdate update = future.get();
-                    processedOutput.setPixel(update.x, update.y, update.color);
+                    PixelRowUpdate update = future.get();
+                    for (int x = 0; x < width; x++) {
+                        processedOutput.setPixel(x, update.y, update.colors[x]);
+                    }
                 } catch (InterruptedException | ExecutionException e) {
                     e.printStackTrace();
                 }
