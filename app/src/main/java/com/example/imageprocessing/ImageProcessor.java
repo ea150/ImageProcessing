@@ -1,10 +1,13 @@
 package com.example.imageprocessing;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.ImageDecoder;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -14,32 +17,31 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ImageProcessor extends AppCompatActivity {
-    //TODO: extract setRequired and processID from values from the xml within onCreate
-    //TODO: (cont) for dev purposes only
     private int setRequired = 10;
     private String processID = "NM";
+
+    private Bitmap rawImage, processedImage;
+
+    private final List<Future<PixelRowUpdate>> futures = new ArrayList<>();
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
-//        //TODO: Create button that calls this and outputs to a jpg
-//        File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
-//        Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
-//
-//        if (dngFiles.length >= setRequired) {
-//            Bitmap outputResult = ImageProcessFactory(Arrays.copyOfRange(dngFiles, 0, setRequired), setRequired, processID);
-//            //TODO: map to an actual image view
-//            imageView.setImageBitmap(outputResult);
-//        } else {
-//            Toast.makeText(this, "Not enough DNG files", Toast.LENGTH_SHORT).show();
-//        }
 
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
@@ -49,101 +51,127 @@ public class ImageProcessor extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        setRequired = getIntent().getIntExtra("setRequired", 10);
+        processID = getIntent().getStringExtra("processID");
+
+        new Thread(() -> {
+            try {
+                ImageProcessFactory();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            for (Future<PixelRowUpdate> future : futures) {
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            runOnUiThread(() -> {
+                File processedFile = new File(getCacheDir(), "processedImage.png");
+                File rawFile = new File(getCacheDir(), "rawImage.png");
+                try (FileOutputStream out = new FileOutputStream(processedFile)) {
+                    processedImage.compress(Bitmap.CompressFormat.PNG, 100, out);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try (FileOutputStream out = new FileOutputStream(rawFile)) {
+                    rawImage.compress(Bitmap.CompressFormat.PNG, 100, out);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                Intent intent = new Intent(ImageProcessor.this, MainActivityNoiseMasking.class);
+                intent.putExtra("processedFilepath", processedFile.getAbsolutePath());
+                intent.putExtra("rawFilepath", rawFile.getAbsolutePath());
+                startActivity(intent);
+            });
+        }).start();
     }
 
-    private Bitmap ImageProcessFactory( int setRequired, String processID) throws IOException {
-
-        File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
-        Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
-        File[] rawData = Arrays.copyOfRange(dngFiles, 0, setRequired);
-//            Toast.makeText(this, "Not enough DNG files", Toast.LENGTH_SHORT).show();
-
+    private void ImageProcessFactory() throws IOException {
+       File[] rawData;
+       File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
+       if (dngFiles != null && dngFiles.length >= 10) {
+           Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
+           rawData = Arrays.copyOfRange(dngFiles, 0, setRequired);
+       } else {
+           Toast.makeText(this, "Not enough DNG files", Toast.LENGTH_SHORT).show();
+           return;
+       }
 
         //load in the DNG files as Bitmap
         Bitmap[] bitmaps = new Bitmap[setRequired];
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             for (int i = 0; i < setRequired; i++) {
-                ImageDecoder.Source source = null;
-                source = ImageDecoder.createSource(rawData[i]);
-                bitmaps[i] = ImageDecoder.decodeBitmap(source);
+                File file = rawData[i];
+                ImageDecoder.Source source = ImageDecoder.createSource(file);
+                bitmaps[i] = ImageDecoder.decodeBitmap(source, (decoder, info, src) -> {
+                    decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
+                });
+            }
         }
-    }
 
         //setup size of output Bitmap
         int width = bitmaps[0].getWidth();
         int height = bitmaps[0].getHeight();
+        rawImage = bitmaps[0];
         Bitmap processedOutput = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
-        if(processID.equals("HDR")){
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                long r = 0, g = 0, b = 0;
-                for (Bitmap bmp : bitmaps) {
-                    int color = bmp.getPixel(x, y);
-                    r += Color.red(color);
-                    g += Color.green(color);
-                    b += Color.blue(color);
-                }
-                int avgR = (int)(r / 10);
-                int avgG = (int)(g / 10);
-                int avgB = (int)(b / 10);
-                processedOutput.setPixel(x, y, Color.rgb(avgR, avgG, avgB));
-            }
-        }
-        //indicate where in process
-        Toast.makeText(this, "Averaging completed. ", Toast.LENGTH_SHORT).show();
-        }
+        int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
+        ExecutorService executorService = Executors.newFixedThreadPool(NUMBER_OF_CORES);
 
-        else if(processID.equals("NM")) {
-
-            //NOISE MAP
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
+        for (int y = 0; y < height; y++) {
+            int finalY = y;
+            Future<PixelRowUpdate> future = executorService.submit(() -> {
+                int[] pixelUpdates = new int[width];
+                for (int x = 0; x < width; x++) {
+                    // Calculates average luminance of a given pixel
                     double[] luminances = new double[setRequired];
-
-                    for (int i = 0; i < 10; i++) {
-                        int color = bitmaps[i].getPixel(x, y);
+                    double[] lumVariances = new double[setRequired];
+                    for (int i = 0; i < setRequired; i++) {
+                        Bitmap bmp = bitmaps[i];
+                        int color = bmp.getPixel(x, finalY);
                         int r = Color.red(color);
                         int g = Color.green(color);
                         int b = Color.blue(color);
-                        luminances[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b; // Luminance
+                        luminances[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
                     }
+                    double avgLuminance = Arrays.stream(luminances).sum() / setRequired;
+                    for (int i = 0; i < setRequired; i++) {
+                        lumVariances[i] = Math.pow(luminances[i] - avgLuminance, 2);
+                    }
+                    double avgLuminanceSquare = Arrays.stream(lumVariances).sum() / setRequired;
+                    int gray = Math.min(255, (int) (Math.sqrt(avgLuminanceSquare) * 2));
+                    pixelUpdates[x] = Color.rgb(gray, gray, gray);
+                }
+                return new PixelRowUpdate(finalY, pixelUpdates);
+            });
+            futures.add(future);
+        }
 
-                    double mean = 0;
-                    for (double val : luminances) mean += val;
-                    mean /= luminances.length;
-
-                    double variance = 0;
-                    for (double val : luminances) variance += Math.pow(val - mean, 2);
-                    variance /= luminances.length;
-
-                    // scale for visibility
-                    double stdDev = Math.sqrt(variance);
-                    int gray = Math.min(255, (int) (stdDev * 2));
-
-                    processedOutput.setPixel(x, y, Color.rgb(gray, gray, gray));
+        executorService.submit(() -> {
+            // Wait for all tasks to finish and apply updates
+            for (Future<PixelRowUpdate> future : futures) {
+                try {
+                    PixelRowUpdate update = future.get();
+                    for (int x = 0; x < width; x++) {
+                        processedOutput.setPixel(x, update.y, update.colors[x]);
+                    }
+                } catch (InterruptedException | ExecutionException e) {
+                    e.printStackTrace();
                 }
             }
+            processedImage = processedOutput.copy(processedOutput.getConfig(), true);
+        });
+        executorService.shutdown();
+        try {
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
-        //return the Bitmap
-        return processedOutput;
     }
-
-
-
-// TODO: delete if not needed in the end
-// Thought we would need it, might not
-
-//    private void saveBitmapToJpg(Bitmap bitmap, File outputFile) {
-//        try (FileOutputStream out = new FileOutputStream(outputFile)) {
-//            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out); // 90 = quality (0–100)
-//            out.flush();
-//        } catch (Exception e) {
-//            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show();
-//        }
-//    }
-
-
-
 }

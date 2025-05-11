@@ -1,7 +1,9 @@
 package com.example.imageprocessing;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.*;
@@ -21,10 +23,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ActivityCamera extends AppCompatActivity {
 
@@ -58,11 +66,14 @@ public class ActivityCamera extends AppCompatActivity {
         textureView.setSurfaceTextureListener(surfaceTextureListener);
 
         Button captureButton = findViewById(R.id.CaptureButton);
-        captureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                takeRawPicture();
-            }
+        captureButton.setOnClickListener(v -> takeRawPicture());
+
+        Button processBackButton = findViewById(R.id.ProcessAndBackButton);
+        processBackButton.setOnClickListener(v -> {
+            Intent intent = new Intent(ActivityCamera.this, ImageProcessor.class);
+            intent.putExtra("setRequired", getIntent().getIntExtra("setRequired", 10));
+            intent.putExtra("processID", getIntent().getStringExtra("processID"));
+            startActivity(intent);
         });
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -72,13 +83,13 @@ public class ActivityCamera extends AppCompatActivity {
 
     private final TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
         @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
             openCamera();
         }
 
-        @Override public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {}
-        @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) { return false; }
-        @Override public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
+        @Override public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {}
+        @Override public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) { return false; }
+        @Override public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {}
     };
 
     private void openCamera() {
@@ -170,6 +181,8 @@ public class ActivityCamera extends AppCompatActivity {
                             savedCount++;
                             if (savedCount >= burstSize) {
                                 Toast.makeText(ActivityCamera.this, "RAW burst complete", Toast.LENGTH_SHORT).show();
+                                reader.setOnImageAvailableListener(null, null);
+                                reader.close();
                             }
                         }
                     } catch (Exception e) {
@@ -222,6 +235,14 @@ public class ActivityCamera extends AppCompatActivity {
         if (camera != null) {
             camera.close();
             camera = null;
+        }
+        if (imageReader != null) {
+            imageReader.close();
+            imageReader = null;
+        }
+        if (captureSession != null) {
+            captureSession.close();
+            captureSession = null;
         }
         super.onPause();
     }

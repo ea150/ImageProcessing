@@ -1,7 +1,6 @@
 package com.example.imageprocessing;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -17,12 +16,10 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
-import java.io.File;
-
 public class MainActivityNoiseMasking extends AppCompatActivity {
 
     Button backButton, photoButton, nmButton;
-    ImageView previewImage;
+    ImageView previewRawImage, previewProcessedImage;
     TextView nmInfo, previewLabel, tagline;
 
     boolean processedImageExists;
@@ -39,43 +36,47 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
             startActivity(intent);
         });
 
-        previewImage = findViewById(R.id.previewImage);
+        previewRawImage = findViewById(R.id.previewRawImage);
+        previewProcessedImage = findViewById(R.id.previewProcessedImage);
         nmInfo = findViewById(R.id.nmInfoText);
         previewLabel = findViewById(R.id.previewLabel);
         tagline = findViewById(R.id.tagline);
         nmButton = findViewById(R.id.nmButton);
         photoButton = findViewById(R.id.photoButton);
 
-        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) previewImage.getLayoutParams();
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         float deviceRatio = (float) metrics.heightPixels / metrics.widthPixels;
-        params.dimensionRatio = "W," + (1/deviceRatio) + ":1";
-        previewImage.setLayoutParams(params);
 
-        File processedImg = null;
-        File[] imgs = getCacheDir().listFiles();
-        if (imgs != null && imgs.length > 0) {
-            processedImg = imgs[imgs.length - 1];
-            processedImageExists = processedImg.getName().endsWith(".jpg");
-        } else {
-            processedImageExists = false;
-        }
+        ConstraintLayout.LayoutParams processedParams = (ConstraintLayout.LayoutParams) previewProcessedImage.getLayoutParams();
+        processedParams.dimensionRatio = "W," + (1/deviceRatio) + ":1";
+        previewProcessedImage.setLayoutParams(processedParams);
+
+        ConstraintLayout.LayoutParams rawParams = (ConstraintLayout.LayoutParams) previewRawImage.getLayoutParams();
+        rawParams.dimensionRatio = "W," + (1 / deviceRatio) + ":1";
+        previewRawImage.setLayoutParams(rawParams);
+
+        String processedFilepath = getIntent().getStringExtra("processedFilepath");
+        String rawFilepath = getIntent().getStringExtra("rawFilepath");
+        processedImageExists = processedFilepath != null;
 
         if (processedImageExists) {
             nmButton.setText(R.string.nm_info_button);
             nmInfo.setVisibility(View.INVISIBLE);
-            Bitmap bitmap = BitmapFactory.decodeFile(processedImg.getAbsolutePath());
-            previewImage.setImageBitmap(bitmap);
-            previewImage.setVisibility(View.VISIBLE);
+            previewProcessedImage.setImageBitmap(BitmapFactory.decodeFile(processedFilepath));
+            previewRawImage.setImageBitmap(BitmapFactory.decodeFile(rawFilepath));
+            previewProcessedImage.setVisibility(View.VISIBLE);
+            previewRawImage.setVisibility(View.VISIBLE);
         } else {
             nmButton.setText(R.string.show_images_button);
             nmInfo.setVisibility(View.VISIBLE);
-            previewImage.setVisibility(View.INVISIBLE);
+            previewProcessedImage.setVisibility(View.INVISIBLE);
+            previewRawImage.setVisibility(View.INVISIBLE);
         }
 
         photoButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivityNoiseMasking.this, ActivityCamera.class);
             intent.putExtra("setRequired", 10);
+            intent.putExtra("processID", "NM");
             startActivity(intent);
         });
 
@@ -83,12 +84,14 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
             if (!processedImageExists) {
                 nmButton.setText(R.string.nm_info_button);
                 nmInfo.setVisibility(View.INVISIBLE);
-                previewImage.setVisibility(View.VISIBLE);
+                previewProcessedImage.setVisibility(View.VISIBLE);
+                previewRawImage.setVisibility(View.VISIBLE);
                 processedImageExists = true;
             } else {
                 nmButton.setText(R.string.show_images_button);
                 nmInfo.setVisibility(View.VISIBLE);
-                previewImage.setVisibility(View.INVISIBLE);
+                previewProcessedImage.setVisibility(View.INVISIBLE);
+                previewRawImage.setVisibility(View.INVISIBLE);
                 processedImageExists = false;
             }
         });
