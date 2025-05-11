@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ImageProcessor extends AppCompatActivity {
     private int setRequired = 10;
@@ -67,17 +68,22 @@ public class ImageProcessor extends AppCompatActivity {
             }
 
             runOnUiThread(() -> {
+                File file = new File(getCacheDir(), "processedImage.png");
+                try (FileOutputStream out = new FileOutputStream(file)) {
+                    processedImage.compress(Bitmap.CompressFormat.PNG, 100, out);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Intent intent = new Intent(ImageProcessor.this, MainActivityNoiseMasking.class);
-                intent.putExtra("processedBitmap", processedImage);
+                intent.putExtra("filepath", file.getAbsolutePath());
                 startActivity(intent);
-                // finish();
             });
         }).start();
     }
 
     private void ImageProcessFactory() throws IOException {
        File[] rawData;
-        File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
+       File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
        if (dngFiles != null && dngFiles.length >= 10) {
            Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
            rawData = Arrays.copyOfRange(dngFiles, 0, setRequired);
@@ -148,7 +154,13 @@ public class ImageProcessor extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
+            processedImage = processedOutput.copy(processedOutput.getConfig(), true);
         });
         executorService.shutdown();
+        try {
+            executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
