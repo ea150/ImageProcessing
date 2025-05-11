@@ -83,13 +83,13 @@ public class ActivityCamera extends AppCompatActivity {
 
     private final TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
         @Override
-        public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+        public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
             openCamera();
         }
 
-        @Override public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {}
-        @Override public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) { return false; }
-        @Override public void onSurfaceTextureUpdated(SurfaceTexture surface) {}
+        @Override public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surface, int width, int height) {}
+        @Override public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surface) { return false; }
+        @Override public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surface) {}
     };
 
     private void openCamera() {
