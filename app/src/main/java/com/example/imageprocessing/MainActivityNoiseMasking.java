@@ -52,21 +52,13 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
         params.dimensionRatio = "W," + (1/deviceRatio) + ":1";
         previewImage.setLayoutParams(params);
 
-        File processedImg = null;
-        File[] imgs = getCacheDir().listFiles();
-        if (imgs != null && imgs.length > 0) {
-            processedImg = imgs[imgs.length - 1];
-            processedImageExists = processedImg.getName().endsWith(".jpg");
-        } else {
-            processedImageExists = false;
-        }
+        Bitmap processedImage = getIntent().getParcelableExtra("processed_bitmap");
+        processedImageExists = processedImage != null;
 
         if (processedImageExists) {
             nmButton.setText(R.string.nm_info_button);
             nmInfo.setVisibility(View.INVISIBLE);
-            Bitmap bitmap = BitmapFactory.decodeFile(processedImg.getAbsolutePath());
-            //previewImage.setImageResource(R.drawable.noise_output);
-            previewImage.setImageBitmap(bitmap);
+            previewImage.setImageBitmap(processedImage);
             previewImage.setVisibility(View.VISIBLE);
         } else {
             nmButton.setText(R.string.show_images_button);

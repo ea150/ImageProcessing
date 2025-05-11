@@ -76,49 +76,9 @@ public class ActivityCamera extends AppCompatActivity {
 
         Button processBackButton = findViewById(R.id.ProcessAndBackButton);
         processBackButton.setOnClickListener(v -> {
-
-            File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
-            final Bitmap[] processed = new Bitmap[1];
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-
-            Future<?> future = executor.submit(() -> {
-                try {
-                    processed[0] = ImageProcessor.ImageProcessFactory(dngFiles,10,"NM");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
-            }
-
-            File bitmapProcessed = new File(getCacheDir(), "processed_NM.jpg");
-            FileOutputStream output = null;
-            try {
-                output = new FileOutputStream(bitmapProcessed);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            processed[0].compress(Bitmap.CompressFormat.JPEG, 100, output);
-            try {
-                output.flush();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                output.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            Toast.makeText(this, "File Saved", Toast.LENGTH_SHORT).show();
-
-            Intent intent = new Intent(ActivityCamera.this, MainActivityNoiseMasking.class);
+            Intent intent = new Intent(ActivityCamera.this, ImageProcessor.class);
             startActivity(intent);
-            finish();
         });
-
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.CAMERA }, REQUEST_CAMERA);
