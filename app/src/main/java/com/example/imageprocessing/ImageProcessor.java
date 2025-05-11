@@ -68,7 +68,7 @@ public class ImageProcessor extends AppCompatActivity {
 
             runOnUiThread(() -> {
                 Intent intent = new Intent(ImageProcessor.this, MainActivityNoiseMasking.class);
-                intent.putExtra("processedImage", processedImage);
+                intent.putExtra("processedBitmap", processedImage);
                 startActivity(intent);
                 // finish();
             });

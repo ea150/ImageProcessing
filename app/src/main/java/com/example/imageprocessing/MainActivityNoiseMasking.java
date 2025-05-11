@@ -52,7 +52,7 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
         params.dimensionRatio = "W," + (1/deviceRatio) + ":1";
         previewImage.setLayoutParams(params);
 
-        Bitmap processedImage = getIntent().getParcelableExtra("processed_bitmap");
+        Bitmap processedImage = getIntent().getParcelableExtra("processedBitmap");
         processedImageExists = processedImage != null;
 
         if (processedImageExists) {
