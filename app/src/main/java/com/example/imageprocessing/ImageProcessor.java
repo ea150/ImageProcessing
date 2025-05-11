@@ -18,6 +18,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ImageProcessor extends AppCompatActivity {
     //TODO: extract setRequired and processID from values from the xml within onCreate
@@ -51,12 +53,12 @@ public class ImageProcessor extends AppCompatActivity {
         });
     }
 
-    private Bitmap ImageProcessFactory( int setRequired, String processID) throws IOException {
+    public static Bitmap ImageProcessFactory(File[] dngFiles, int setRequired, String processID) throws IOException {
 
-        File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
+//       File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
         Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
         File[] rawData = Arrays.copyOfRange(dngFiles, 0, setRequired);
-//            Toast.makeText(this, "Not enough DNG files", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, "Not enough DNG files", Toast.LENGTH_SHORT).show();
 
 
         //load in the DNG files as Bitmap
@@ -64,73 +66,85 @@ public class ImageProcessor extends AppCompatActivity {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             for (int i = 0; i < setRequired; i++) {
-                ImageDecoder.Source source = null;
-                source = ImageDecoder.createSource(rawData[i]);
-                bitmaps[i] = ImageDecoder.decodeBitmap(source);
+                File file = rawData[i];
+                ImageDecoder.Source source = ImageDecoder.createSource(rawData[i]);
+                bitmaps[i] = ImageDecoder.decodeBitmap(source, (decoder, info, src) -> {
+                    decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
+                });
+            }
         }
-    }
 
         //setup size of output Bitmap
         int width = bitmaps[0].getWidth();
         int height = bitmaps[0].getHeight();
         Bitmap processedOutput = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
-        if(processID.equals("HDR")){
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                long r = 0, g = 0, b = 0;
-                for (Bitmap bmp : bitmaps) {
-                    int color = bmp.getPixel(x, y);
-                    r += Color.red(color);
-                    g += Color.green(color);
-                    b += Color.blue(color);
-                }
-                int avgR = (int)(r / 10);
-                int avgG = (int)(g / 10);
-                int avgB = (int)(b / 10);
-                processedOutput.setPixel(x, y, Color.rgb(avgR, avgG, avgB));
-            }
-        }
-        //indicate where in process
-        Toast.makeText(this, "Averaging completed. ", Toast.LENGTH_SHORT).show();
-        }
-
-        else if(processID.equals("NM")) {
-
-            //NOISE MAP
+        if (processID.equals("HDR")) {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    double[] luminances = new double[setRequired];
+                    long r = 0, g = 0, b = 0;
+                    for (Bitmap bmp : bitmaps) {
+                        int color = bmp.getPixel(x, y);
+                        r += Color.red(color);
+                        g += Color.green(color);
+                        b += Color.blue(color);
+                    }
+                    int avgR = (int) (r / 10);
+                    int avgG = (int) (g / 10);
+                    int avgB = (int) (b / 10);
+                    processedOutput.setPixel(x, y, Color.rgb(avgR, avgG, avgB));
+                }
+            }
+            //indicate where in process
+            //Toast.makeText(this, "Averaging completed. ", Toast.LENGTH_SHORT).show();
+        } else if (processID.equals("NM")) {
+            int[] pixelRow = new int[width];
+            int[][] rowData = new int[setRequired][width];
 
-                    for (int i = 0; i < 10; i++) {
-                        int color = bitmaps[i].getPixel(x, y);
+            for (int y = 0; y < height; y++) {
+                // Get the same row from each bitmap
+                for (int i = 0; i < setRequired; i++) {
+                    bitmaps[i].getPixels(rowData[i], 0, width, 0, y, width, 1);
+                }
+
+                for (int x = 0; x < width; x++) {
+                    double[] luminances = new double[setRequired];
+                    for (int i = 0; i < setRequired; i++) {
+                        int color = rowData[i][x];
                         int r = Color.red(color);
                         int g = Color.green(color);
                         int b = Color.blue(color);
-                        luminances[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b; // Luminance
+                        luminances[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
                     }
 
                     double mean = 0;
                     for (double val : luminances) mean += val;
-                    mean /= luminances.length;
+                    mean /= setRequired;
 
                     double variance = 0;
                     for (double val : luminances) variance += Math.pow(val - mean, 2);
-                    variance /= luminances.length;
+                    variance /= setRequired;
 
-                    // scale for visibility
-                    double stdDev = Math.sqrt(variance);
-                    int gray = Math.min(255, (int) (stdDev * 2));
-
-                    processedOutput.setPixel(x, y, Color.rgb(gray, gray, gray));
+                    int gray = Math.min(255, (int) (Math.sqrt(variance) * 2));
+                    pixelRow[x] = Color.rgb(gray, gray, gray);
                 }
-            }
+
+                // Set the row into output bitmap
+                processedOutput.setPixels(pixelRow, 0, width, 0, y, width, 1);
+            }}
+        // Clean up bitmaps
+        for (Bitmap bmp : bitmaps) {
+            if (bmp != null && !bmp.isRecycled()) bmp.recycle();
         }
-        //return the Bitmap
+
+//        File bitmapProcessed = new File(getCacheDir(), "processed_" + processID + ".jpg");
+//        FileOutputStream output = new FileOutputStream(bitmapProcessed);
+//        processedOutput.compress(Bitmap.CompressFormat.JPEG, 100, output);
+//        Toast.makeText(this, "Processing complete. ", Toast.LENGTH_SHORT).show();
         return processedOutput;
     }
 
-
+}
 
 // TODO: delete if not needed in the end
 // Thought we would need it, might not
@@ -146,4 +160,4 @@ public class ImageProcessor extends AppCompatActivity {
 
 
 
-}
+

@@ -65,6 +65,7 @@ public class MainActivityNoiseMasking extends AppCompatActivity {
             nmButton.setText(R.string.nm_info_button);
             nmInfo.setVisibility(View.INVISIBLE);
             Bitmap bitmap = BitmapFactory.decodeFile(processedImg.getAbsolutePath());
+            //previewImage.setImageResource(R.drawable.noise_output);
             previewImage.setImageBitmap(bitmap);
             previewImage.setVisibility(View.VISIBLE);
         } else {

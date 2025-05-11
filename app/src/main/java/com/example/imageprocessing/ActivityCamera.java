@@ -1,7 +1,9 @@
 package com.example.imageprocessing;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.*;
@@ -21,10 +23,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class ActivityCamera extends AppCompatActivity {
 
@@ -62,8 +70,55 @@ public class ActivityCamera extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 takeRawPicture();
+
             }
         });
+
+        Button processBackButton = findViewById(R.id.ProcessAndBackButton);
+        processBackButton.setOnClickListener(v -> {
+
+            File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
+            final Bitmap[] processed = new Bitmap[1];
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+
+            Future<?> future = executor.submit(() -> {
+                try {
+                    processed[0] = ImageProcessor.ImageProcessFactory(dngFiles,10,"NM");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            File bitmapProcessed = new File(getCacheDir(), "processed_NM.jpg");
+            FileOutputStream output = null;
+            try {
+                output = new FileOutputStream(bitmapProcessed);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            processed[0].compress(Bitmap.CompressFormat.JPEG, 100, output);
+            try {
+                output.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                output.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            Toast.makeText(this, "File Saved", Toast.LENGTH_SHORT).show();
+
+            Intent intent = new Intent(ActivityCamera.this, MainActivityNoiseMasking.class);
+            startActivity(intent);
+            finish();
+        });
+
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.CAMERA }, REQUEST_CAMERA);
@@ -170,6 +225,8 @@ public class ActivityCamera extends AppCompatActivity {
                             savedCount++;
                             if (savedCount >= burstSize) {
                                 Toast.makeText(ActivityCamera.this, "RAW burst complete", Toast.LENGTH_SHORT).show();
+                                reader.setOnImageAvailableListener(null, null);
+                                reader.close();
                             }
                         }
                     } catch (Exception e) {
@@ -222,6 +279,14 @@ public class ActivityCamera extends AppCompatActivity {
         if (camera != null) {
             camera.close();
             camera = null;
+        }
+        if (imageReader != null) {
+            imageReader.close();
+            imageReader = null;
+        }
+        if (captureSession != null) {
+            captureSession.close();
+            captureSession = null;
         }
         super.onPause();
     }
