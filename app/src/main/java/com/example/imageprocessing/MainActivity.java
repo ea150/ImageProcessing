@@ -2,6 +2,7 @@ package com.example.imageprocessing;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
@@ -29,11 +30,13 @@ public class MainActivity extends AppCompatActivity {
         );
 
         hdrButton = findViewById(R.id.HDR);
-        hdrButton.setOnClickListener(v -> {
-            Intent i = new Intent(MainActivity.this,MainActivityHighDynamicRange.class);
-            startActivity(i);
-        }
-        );
+        // TODO HDR will not be implemented, so we are hiding the button
+        hdrButton.setVisibility(View.INVISIBLE);
+//        hdrButton.setOnClickListener(v -> {
+//            Intent i = new Intent(MainActivity.this,MainActivityHighDynamicRange.class);
+//            startActivity(i);
+//        }
+//        );
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
