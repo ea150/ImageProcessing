@@ -66,17 +66,13 @@ public class ActivityCamera extends AppCompatActivity {
         textureView.setSurfaceTextureListener(surfaceTextureListener);
 
         Button captureButton = findViewById(R.id.CaptureButton);
-        captureButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                takeRawPicture();
-
-            }
-        });
+        captureButton.setOnClickListener(v -> takeRawPicture());
 
         Button processBackButton = findViewById(R.id.ProcessAndBackButton);
         processBackButton.setOnClickListener(v -> {
             Intent intent = new Intent(ActivityCamera.this, ImageProcessor.class);
+            intent.putExtra("setRequired", getIntent().getIntExtra("setRequired", 10));
+            intent.putExtra("processID", getIntent().getStringExtra("processID"));
             startActivity(intent);
         });
 

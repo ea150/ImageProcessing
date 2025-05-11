@@ -35,7 +35,7 @@ public class ImageProcessor extends AppCompatActivity {
     private int setRequired = 10;
     private String processID = "NM";
 
-    private Bitmap processedImage;
+    private Bitmap rawImage, processedImage;
 
     private final List<Future<PixelRowUpdate>> futures = new ArrayList<>();
 
@@ -51,6 +51,9 @@ public class ImageProcessor extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
+        setRequired = getIntent().getIntExtra("setRequired", 10);
+        processID = getIntent().getStringExtra("processID");
 
         new Thread(() -> {
             try {
@@ -68,14 +71,21 @@ public class ImageProcessor extends AppCompatActivity {
             }
 
             runOnUiThread(() -> {
-                File file = new File(getCacheDir(), "processedImage.png");
-                try (FileOutputStream out = new FileOutputStream(file)) {
+                File processedFile = new File(getCacheDir(), "processedImage.png");
+                File rawFile = new File(getCacheDir(), "rawImage.png");
+                try (FileOutputStream out = new FileOutputStream(processedFile)) {
                     processedImage.compress(Bitmap.CompressFormat.PNG, 100, out);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+                try (FileOutputStream out = new FileOutputStream(rawFile)) {
+                    rawImage.compress(Bitmap.CompressFormat.PNG, 100, out);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Intent intent = new Intent(ImageProcessor.this, MainActivityNoiseMasking.class);
-                intent.putExtra("filepath", file.getAbsolutePath());
+                intent.putExtra("processedFilepath", processedFile.getAbsolutePath());
+                intent.putExtra("rawFilepath", rawFile.getAbsolutePath());
                 startActivity(intent);
             });
         }).start();
@@ -108,6 +118,7 @@ public class ImageProcessor extends AppCompatActivity {
         //setup size of output Bitmap
         int width = bitmaps[0].getWidth();
         int height = bitmaps[0].getHeight();
+        rawImage = bitmaps[0];
         Bitmap processedOutput = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
         int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
