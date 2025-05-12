@@ -32,9 +32,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class ImageProcessor extends AppCompatActivity {
-    private int setRequired = 10;
-    private String processID = "NM";
+    private int setRequired;
 
+    private String processID;
     private Bitmap rawImage, processedImage;
 
     private final List<Future<PixelRowUpdate>> futures = new ArrayList<>();
@@ -54,6 +54,7 @@ public class ImageProcessor extends AppCompatActivity {
 
         setRequired = getIntent().getIntExtra("setRequired", 10);
         processID = getIntent().getStringExtra("processID");
+        assert processID != null;
 
         new Thread(() -> {
             try {
@@ -83,7 +84,12 @@ public class ImageProcessor extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Intent intent = new Intent(ImageProcessor.this, MainActivityNoiseMasking.class);
+                Intent intent;
+                if (processID.equals("NM")) {
+                    intent = new Intent(ImageProcessor.this, MainActivityNoiseMasking.class);
+                } else {
+                    intent = new Intent(ImageProcessor.this, MainActivityHighDynamicRange.class);
+                }
                 intent.putExtra("processedFilepath", processedFile.getAbsolutePath());
                 intent.putExtra("rawFilepath", rawFile.getAbsolutePath());
                 startActivity(intent);
@@ -94,7 +100,7 @@ public class ImageProcessor extends AppCompatActivity {
     private void ImageProcessFactory() throws IOException {
        File[] rawData;
        File[] dngFiles = getCacheDir().listFiles((dir, name) -> name.endsWith(".dng"));
-       if (dngFiles != null && dngFiles.length >= 10) {
+       if (dngFiles != null && dngFiles.length >= setRequired) {
            Arrays.sort(dngFiles, Comparator.comparingLong(File::lastModified).reversed());
            rawData = Arrays.copyOfRange(dngFiles, 0, setRequired);
        } else {
@@ -118,7 +124,7 @@ public class ImageProcessor extends AppCompatActivity {
         //setup size of output Bitmap
         int width = bitmaps[0].getWidth();
         int height = bitmaps[0].getHeight();
-        rawImage = bitmaps[0];
+        rawImage = bitmaps[bitmaps.length / 2];
         Bitmap processedOutput = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
 
         int NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors();
@@ -126,31 +132,52 @@ public class ImageProcessor extends AppCompatActivity {
 
         for (int y = 0; y < height; y++) {
             int finalY = y;
-            Future<PixelRowUpdate> future = executorService.submit(() -> {
-                int[] pixelUpdates = new int[width];
-                for (int x = 0; x < width; x++) {
-                    // Calculates average luminance of a given pixel
-                    double[] luminances = new double[setRequired];
-                    double[] lumVariances = new double[setRequired];
-                    for (int i = 0; i < setRequired; i++) {
-                        Bitmap bmp = bitmaps[i];
-                        int color = bmp.getPixel(x, finalY);
-                        int r = Color.red(color);
-                        int g = Color.green(color);
-                        int b = Color.blue(color);
-                        luminances[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            if (processID.equals("HDR")) {
+                Future<PixelRowUpdate> future = executorService.submit(() -> {
+                    int[] pixelUpdates = new int[width];
+                    for (int x = 0; x < width; x++) {
+                        long r = 0, g = 0, b = 0;
+                        for (Bitmap bmp : bitmaps) {
+                            int color = bmp.getPixel(x, finalY);
+                            r += Color.red(color);
+                            g += Color.green(color);
+                            b += Color.blue(color);
+                        }
+                        int avgR = (int)(r / setRequired);
+                        int avgG = (int)(g / setRequired);
+                        int avgB = (int)(b / setRequired);
+                        pixelUpdates[x] = Color.rgb(avgR, avgG, avgB);
                     }
-                    double avgLuminance = Arrays.stream(luminances).sum() / setRequired;
-                    for (int i = 0; i < setRequired; i++) {
-                        lumVariances[i] = Math.pow(luminances[i] - avgLuminance, 2);
+                    return new PixelRowUpdate(finalY, pixelUpdates);
+                });
+                futures.add(future);
+            } else if (processID.equals("NM")) {
+                Future<PixelRowUpdate> future = executorService.submit(() -> {
+                    int[] pixelUpdates = new int[width];
+                    for (int x = 0; x < width; x++) {
+                        // Calculates average luminance of a given pixel
+                        double[] luminances = new double[setRequired];
+                        double[] lumVariances = new double[setRequired];
+                        for (int i = 0; i < setRequired; i++) {
+                            Bitmap bmp = bitmaps[i];
+                            int color = bmp.getPixel(x, finalY);
+                            int r = Color.red(color);
+                            int g = Color.green(color);
+                            int b = Color.blue(color);
+                            luminances[i] = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                        }
+                        double avgLuminance = Arrays.stream(luminances).sum() / setRequired;
+                        for (int i = 0; i < setRequired; i++) {
+                            lumVariances[i] = Math.pow(luminances[i] - avgLuminance, 2);
+                        }
+                        double avgLuminanceSquare = Arrays.stream(lumVariances).sum() / setRequired;
+                        int gray = Math.min(255, (int) (Math.sqrt(avgLuminanceSquare) * 2));
+                        pixelUpdates[x] = Color.rgb(gray, gray, gray);
                     }
-                    double avgLuminanceSquare = Arrays.stream(lumVariances).sum() / setRequired;
-                    int gray = Math.min(255, (int) (Math.sqrt(avgLuminanceSquare) * 2));
-                    pixelUpdates[x] = Color.rgb(gray, gray, gray);
-                }
-                return new PixelRowUpdate(finalY, pixelUpdates);
-            });
-            futures.add(future);
+                    return new PixelRowUpdate(finalY, pixelUpdates);
+                });
+                futures.add(future);
+            }
         }
 
         executorService.submit(() -> {

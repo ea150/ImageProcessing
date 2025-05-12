@@ -3,13 +3,13 @@ package com.example.imageprocessing;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.*;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
+import android.util.Range;
 import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
@@ -23,16 +23,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.Objects;
 
 public class ActivityCamera extends AppCompatActivity {
 
@@ -41,6 +36,8 @@ public class ActivityCamera extends AppCompatActivity {
     private CameraCaptureSession captureSession;
     private CaptureRequest.Builder previewRequestBuilder;
     private ImageReader imageReader;
+
+    private Button processBackButton;
 
     private CameraCharacteristics cameraCharacteristics;
     private TotalCaptureResult captureResult;
@@ -68,7 +65,8 @@ public class ActivityCamera extends AppCompatActivity {
         Button captureButton = findViewById(R.id.CaptureButton);
         captureButton.setOnClickListener(v -> takeRawPicture());
 
-        Button processBackButton = findViewById(R.id.ProcessAndBackButton);
+        processBackButton = findViewById(R.id.ProcessAndBackButton);
+        processBackButton.setVisibility(View.INVISIBLE);
         processBackButton.setOnClickListener(v -> {
             Intent intent = new Intent(ActivityCamera.this, ImageProcessor.class);
             intent.putExtra("setRequired", getIntent().getIntExtra("setRequired", 10));
@@ -98,9 +96,9 @@ public class ActivityCamera extends AppCompatActivity {
             String cameraId = cameraManager.getCameraIdList()[0];
             cameraCharacteristics = cameraManager.getCameraCharacteristics(cameraId);
 
-            Size previewSize = cameraCharacteristics
-                    .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                    .getOutputSizes(SurfaceTexture.class)[0];
+            Size previewSize = Objects.requireNonNull(cameraCharacteristics
+                            .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP))
+                            .getOutputSizes(SurfaceTexture.class)[0];
 
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 return;
@@ -122,17 +120,17 @@ public class ActivityCamera extends AppCompatActivity {
         }
     }
 
-    //TODO: for NM, replace preview with light sensor and prompt to capture on 0 light
     private void startPreview(Size size) {
         try {
             SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+            assert surfaceTexture != null;
             surfaceTexture.setDefaultBufferSize(size.getWidth(), size.getHeight());
             Surface surface = new Surface(surfaceTexture);
 
             previewRequestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewRequestBuilder.addTarget(surface);
 
-            camera.createCaptureSession(Arrays.asList(surface), new CameraCaptureSession.StateCallback() {
+            camera.createCaptureSession(List.of(surface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     captureSession = session;
@@ -155,13 +153,12 @@ public class ActivityCamera extends AppCompatActivity {
         if (camera == null) return;
 
         try {
-            Size[] rawSizes = cameraCharacteristics
-                    .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
-                    .getOutputSizes(ImageFormat.RAW_SENSOR);
+            Size[] rawSizes = Objects.requireNonNull(cameraCharacteristics
+                            .get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP))
+                            .getOutputSizes(ImageFormat.RAW_SENSOR);
             Size rawSize = rawSizes[0];
 
-            //TODO: buffer will need to be extracted to a variable and passed in (3 or 10 respectively)
-            int burstSize = 10; //TODO: for dev only
+            int burstSize = getIntent().getIntExtra("setRequired", 10);
             imageReader = ImageReader.newInstance(rawSize.getWidth(), rawSize.getHeight(), ImageFormat.RAW_SENSOR, burstSize);
             Surface rawSurface = imageReader.getSurface();
 
@@ -185,20 +182,48 @@ public class ActivityCamera extends AppCompatActivity {
                                 reader.close();
                             }
                         }
-                    } catch (Exception e) {
-                        Toast.makeText(ActivityCamera.this, "Error saving burst image", Toast.LENGTH_SHORT).show();
+                    } catch (Exception ignored) {
+
                     }
                 }
             }, null);
 
-            List<CaptureRequest> burstList = new ArrayList<>();
-            for (int i = 0; i < burstSize; i++) {
-                CaptureRequest.Builder rawBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-                rawBuilder.addTarget(rawSurface);
-                burstList.add(rawBuilder.build());
+            Range<Long> exposureRange = cameraCharacteristics.get(CameraCharacteristics.SENSOR_INFO_EXPOSURE_TIME_RANGE);
+            if (exposureRange == null) {
+                Toast.makeText(this, "Exposure range not available", Toast.LENGTH_SHORT).show();
+                return;
             }
 
-            camera.createCaptureSession(Arrays.asList(rawSurface), new CameraCaptureSession.StateCallback() {
+            long minExposure = exposureRange.getLower();
+            long maxExposure = exposureRange.getUpper();
+            long midExposure = (minExposure + maxExposure) / 2;
+
+            List<CaptureRequest> burstList = new ArrayList<>();
+            String processID = getIntent().getStringExtra("processID");
+            assert processID != null;
+
+            if (processID.equals("HDR")) {
+                long[] exposureTimes = new long[] { minExposure, midExposure, maxExposure };
+
+                for (int i = 0; i < burstSize; i++) {
+                    CaptureRequest.Builder rawBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+                    rawBuilder.addTarget(rawSurface);
+
+                    rawBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+                    rawBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, exposureTimes[i]);
+                    rawBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 800);
+
+                    burstList.add(rawBuilder.build());
+                }
+            } else if (processID.equals("NM")) {
+                for (int i = 0; i < burstSize; i++) {
+                    CaptureRequest.Builder rawBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+                    rawBuilder.addTarget(rawSurface);
+                    burstList.add(rawBuilder.build());
+                }
+            }
+
+            camera.createCaptureSession(Collections.singletonList(rawSurface), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     try {
@@ -212,6 +237,7 @@ public class ActivityCamera extends AppCompatActivity {
 
                             @Override
                             public void onCaptureSequenceCompleted(@NonNull CameraCaptureSession session,int sequenceId, long frameNumber) {
+                                processBackButton.setVisibility(View.VISIBLE);
                                 Toast.makeText(ActivityCamera.this, "All burst captures done", Toast.LENGTH_SHORT).show();
                             }
                         }, null);
