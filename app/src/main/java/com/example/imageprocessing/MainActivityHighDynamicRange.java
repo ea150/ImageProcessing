@@ -1,7 +1,9 @@
 package com.example.imageprocessing;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -44,26 +46,49 @@ public class MainActivityHighDynamicRange extends AppCompatActivity {
         hdrButton = findViewById(R.id.hdrButton);
         photoButton = findViewById(R.id.photoButton);
 
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
-        float deviceRatio = (float) metrics.heightPixels / metrics.widthPixels;
-
-        ConstraintLayout.LayoutParams processedParams = (ConstraintLayout.LayoutParams) previewProcessedImage.getLayoutParams();
-        processedParams.dimensionRatio = "W," + (1/deviceRatio) + ":1";
-        previewProcessedImage.setLayoutParams(processedParams);
-
-        ConstraintLayout.LayoutParams rawParams = (ConstraintLayout.LayoutParams) previewRawImage.getLayoutParams();
-        rawParams.dimensionRatio = "W," + (1 / deviceRatio) + ":1";
-        previewRawImage.setLayoutParams(rawParams);
-
         String processedFilepath = getIntent().getStringExtra("processedFilepath");
         String rawFilepath = getIntent().getStringExtra("rawFilepath");
         processedImageExists = processedFilepath != null;
 
         if (processedImageExists) {
+            assert rawFilepath != null;
+
             hdrButton.setText(R.string.hdr_info_button);
             hdrInfo.setVisibility(View.INVISIBLE);
-            previewProcessedImage.setImageBitmap(BitmapFactory.decodeFile(processedFilepath));
-            previewRawImage.setImageBitmap(BitmapFactory.decodeFile(rawFilepath));
+
+            Bitmap processedBmp = BitmapFactory.decodeFile(processedFilepath);
+            Bitmap rawBmp = BitmapFactory.decodeFile(rawFilepath);
+            Bitmap processedRotated, rawRotated;
+            try {
+                Matrix matrix = new Matrix();
+
+                matrix.postRotate(270);
+
+                processedRotated = Bitmap.createBitmap(processedBmp, 0 ,0, processedBmp.getWidth(), processedBmp.getHeight(), matrix, true);
+                rawRotated = Bitmap.createBitmap(rawBmp, 0 ,0, rawBmp.getWidth(), rawBmp.getHeight(), matrix, true);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            previewProcessedImage.setImageBitmap(processedRotated);
+            previewRawImage.setImageBitmap(rawRotated);
+
+            int width = processedBmp.getWidth();
+            int height = processedBmp.getHeight();
+            int gcd = gcd(width, height);
+
+            width /= gcd;
+            height /= gcd;
+
+            ConstraintLayout.LayoutParams processedParams = (ConstraintLayout.LayoutParams) previewProcessedImage.getLayoutParams();
+            ConstraintLayout.LayoutParams rawParams = (ConstraintLayout.LayoutParams) previewRawImage.getLayoutParams();
+
+            processedParams.dimensionRatio = "W," + width + ":" + height;
+            rawParams.dimensionRatio = "W," + width + ":" + height;
+
+            previewProcessedImage.setLayoutParams(processedParams);
+            previewRawImage.setLayoutParams(rawParams);
+
             previewProcessedImage.setVisibility(View.VISIBLE);
             previewRawImage.setVisibility(View.VISIBLE);
         } else {
@@ -101,5 +126,14 @@ public class MainActivityHighDynamicRange extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+    }
+
+    private int gcd(int a, int b) {
+        while (b != 0) {
+            int temp = b;
+            b = a % b;
+            a = temp;
+        }
+        return a;
     }
 }
