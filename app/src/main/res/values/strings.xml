@@ -16,7 +16,7 @@
     <string name="launch_title">Image Processing Wizard</string>
     <string name="take_image">Take Photo</string>
     <string name="mountain">Mountain</string>
-    <string name="nm_info">Noise Masking is when a camera takes lots of dark pictures to figure out what the average random noise per picture is, and it subtracts that from the original dark image to get a better picture since the darker a picture is, the more random noise there will naturally be. It helps eliminate all this random noise. Note: this is only meant to be used on dark images, not colorful/bright images. The images have also been cropped closely to the center to enhance pixel visibility.</string>
+    <string name="nm_info">Noise Masking is when a camera takes lots of dark pictures to figure out what the average random noise per light sensor in the Camera is. This identifies all the random hits (noise) on the light sensors and can later be used in image processing algorithms. Note: this is only meant to be used a completely covered (no light) camera.</string>
     <string name="processing">Processing...</string>
     <string name="capture">Capture</string>
 </resources>
